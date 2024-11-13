@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Recommendation System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Abstract Shapes Background */
+        .abstract-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: -1;
+            pointer-events: none; /* Ensures shapes don't interfere with user interactions */
+        }
+
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.1); /* White circles with transparency */
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .circle1 {
+            width: 200px;
+            height: 200px;
+            top: 20%;
+            left: 15%;
+        }
+
+        .circle2 {
+            width: 150px;
+            height: 150px;
+            top: 40%;
+            right: 30%;
+        }
+
+        .circle3 {
+            width: 150px;
+            height: 150px;
+            top: 50%;
+            left: 40%;
+        }
+
+        .circle4 {
+            width: 200px;
+            height: 200px;
+            top: 70%;
+            right: 25%;
+        }
+
+        /* Rounded square shapes (replacing the lines) */
+        .rounded-square {
+            position: absolute;
+            border-radius: 16px; /* Rounded corners */
+            background-color: rgba(255, 255, 255, 0.1); /* Soft white */
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .square1 {
+            width: 50px;
+            height: 50px;
+            top: 5%;
+            left: 5%;
+        }
+
+        .square2 {
+            width: 120px;
+            height: 120px;
+            top: 20%;
+            right: 10%;
+        }
+
+        .square3 {
+            width: 80px;
+            height: 80px;
+            top: 40%;
+            left: 50%;
+        }
+
+        .square4 {
+            width: 100px;
+            height: 100px;
+            top: 60%;
+            right: 20%;
+        }
+
+        /* Simple Animation for Floating Effect */
+        @keyframes float {
+            0% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(30px);
+            }
+            100% {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white relative">
+
+    <!-- Abstract Background Shapes -->
+    <div class="abstract-background">
+        <!-- Circles -->
+        <div class="circle circle1"></div>
+        <div class="circle circle2"></div>
+        <div class="circle circle3"></div>
+        <div class="circle circle4"></div>
+
+        <!-- Rounded Squares (Replacing lines) -->
+        <div class="rounded-square square1"></div>
+        <div class="rounded-square square2"></div>
+        <div class="rounded-square square3"></div>
+        <div class="rounded-square square4"></div>
+    </div>
+
+    <!-- Main Container (Full page scrollable) -->
+    <div class="min-h-screen flex flex-col justify-center items-center px-4 relative z-10">
+
+        <!-- Heading Section -->
+        <h2 class="text-5xl font-bold text-white text-center mb-8">
+            Discover Your Next Movie Adventure
+        </h2>
+
+        <!-- Movie Selection Form -->
+        <form method="POST" class="w-full max-w-lg space-y-4 text-center">
+            {% csrf_token %}
+            <div>
+                <label for="movie" class="block text-lg font-medium text-gray-300 mb-2">Choose a Movie:</label>
+                <select name="movie" id="movie" class="block w-full px-6 py-3 bg-gray-700 border border-gray-600 rounded-md text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    {% for movie in movie_list %}
+                        <option value="{{ movie }}" {% if movie == selected_movie %}selected{% endif %}>{{ movie }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Recommend Button -->
+            <button type="submit" class="mt-4 bg-indigo-600 text-white px-6 py-2 rounded-md text-lg font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                Recommend
+            </button>
+        </form>
+
+        <!-- Recommendations Section -->
+        {% if recommended_movies %}
+        <div class="w-full max-w-7xl mt-8">
+            <h3 class="text-3xl font-semibold text-white mb-6">Recommended Movies:</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                {% for movie_name, poster_url, description in recommended_movies %}
+                <div class="bg-gray-700 rounded-lg overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer transform transition-all hover:scale-105" onclick="openModal('{{ movie_name }}', '{{ poster_url }}', '{{ description }}')">
+                    <img src="{{ poster_url }}" alt="{{ movie_name }}" class="w-full h-56 object-cover rounded-t-lg">
+                    <div class="p-4">
+                        <h4 class="text-xl font-medium text-white">{{ movie_name }}</h4>
+                        <p class="text-gray-400 mt-2 text-sm">{{ description|truncatewords:20 }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+
+     <!-- Modal (Centered in the middle of the screen) -->
+     <div id="movieModal" class="fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden" onclick="closeModal(event)">
+        <div class="bg-gray-800 p-6 rounded-lg max-w-lg w-full max-h-[80vh] overflow-auto" onclick="event.stopPropagation()">
+            <div id="modalContent" class="text-center">
+                <img id="modalPoster" src="" alt="Movie Poster" class="w-full h-96 object-cover rounded-lg mb-4">
+                <h3 id="modalTitle" class="text-3xl font-semibold text-white mb-2"></h3>
+                <p id="modalDescription" class="text-lg text-gray-300"></p>
+            </div>
+        </div>
+    </div>
+   
+
+
+    <!-- JavaScript for Modal -->
+    <script>
+        function openModal(title, posterUrl, description) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalPoster').src = posterUrl;
+            document.getElementById('modalDescription').innerText = description;
+            document.getElementById('movieModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(event) {
+            if (event.target === document.getElementById('movieModal')) {
+                document.getElementById('movieModal').classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        window.addEventListener("load", function() {
+            window.scrollTo(0, 0); 
+        });
+    </script>
+
+</body>
+</html>
